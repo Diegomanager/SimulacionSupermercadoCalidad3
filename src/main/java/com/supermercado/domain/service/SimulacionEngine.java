@@ -12,17 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-/**
- * Motor de simulacion del supermercado.
- *
- * Responsabilidad unica: ejecutar la logica de simulacion del dominio.
- * Publica eventos para comunicar cambios de estado a la infraestructura.
- *
- * NOTA sobre sincronizacion:
- * - iniciar() NO es synchronized porque su bucle principal debe
- *   ceder el control a pausar()/reanudar() que si son synchronized.
- * - pausado y ejecutando son volatile para visibilidad entre hilos.
- */
 public class SimulacionEngine {
 
     private static final int HORA_APERTURA         = 8;
@@ -64,10 +53,6 @@ public class SimulacionEngine {
         this.tiempoPausaInicio   = 0;
     }
 
-    // ============================================================
-    // SIN synchronized - el bucle principal cede el lock
-    // para que pausar()/reanudar() puedan ejecutarse
-    // ============================================================
     public void iniciar(ConfiguracionDTO config) throws InterruptedException {
         if (ejecutando) {
             throw new IllegalStateException("La simulacion ya esta en ejecucion");
@@ -92,7 +77,10 @@ public class SimulacionEngine {
         iniciarHilosCajas();
         publicarEstadisticas();
         ejecutarCicloPrincipal();
-        esperarFinalizacionAtenciones();
+
+        // ----- VACIADO MANUAL DE COLAS -----
+        vaciarColasManual();
+
         detenerHilos();
         mostrarResultados();
 
@@ -100,7 +88,6 @@ public class SimulacionEngine {
         log("=== SIMULACION COMPLETADA ===");
     }
 
-    // synchronized solo en metodos cortos que cambian estado
     public synchronized void pausar() {
         if (!ejecutando || pausado) return;
         pausado           = true;
@@ -140,7 +127,7 @@ public class SimulacionEngine {
     }
 
     // ============================================================
-    // Metodos privados - cada uno con responsabilidad clara
+    // Metodos privados
     // ============================================================
 
     private void inicializarCajas() {
@@ -161,7 +148,7 @@ public class SimulacionEngine {
     }
 
     private void ejecutarCaja(Caja caja) {
-        while (caja.estaActiva()) {
+        while (caja.estaActiva() && ejecutando) {
             try {
                 while (pausado && ejecutando) Thread.sleep(50);
                 if (!ejecutando) break;
@@ -241,34 +228,47 @@ public class SimulacionEngine {
         }
     }
 
-        private void generarCliente() {
+    private void generarCliente() {
         int min       = config.getArticulosClienteMin();
         int max       = config.getArticulosClienteMax();
         int articulos = min + random.nextInt(max - min + 1);
         Cliente cliente = new Cliente(++clientesGenerados, articulos);
-        // Determinar si es rápido según límite configurado
         cliente.setRapido(articulos <= config.getLimiteClienteRapido());
         cliente.setTiempoLlegada(reloj.getTiempoActual());
         String hora = calcularHoraSimulada((int) minutosSimuladosTranscurridos);
         log("[" + hora + "] Cliente-" + cliente.getId() +
             " generado | Articulos: " + articulos +
-            (cliente.esRapido() ? " (RÁPIDO)" : ""));
+            (cliente.esRapido() ? " (RAPIDO)" : ""));
         eventPublisher.publish(new ClienteGeneradoEvent(cliente, hora));
         simuladorService.asignarCliente(cajas, cliente);
     }
 
-    private void esperarFinalizacionAtenciones() throws InterruptedException {
-        log("Esperando que terminen las atenciones...");
-        int intentos = 0;
-        boolean hayPendientes;
-        do {
-            hayPendientes = cajas.stream()
-                .anyMatch(c -> c.tieneClientesPendientes() || c.estaOcupada());
-            if (hayPendientes) {
-                Thread.sleep(Math.max(10, msPerMinutoSimulado / 2));
-                if (++intentos > 200) break;
+    private void vaciarColasManual() throws InterruptedException {
+        log("Vaciando colas manualmente...");
+        int totalClientesEnCola = 0;
+        for (Caja caja : cajas) {
+            totalClientesEnCola += caja.getClientesEnCola();
+        }
+        log("Clientes en cola al cierre: " + totalClientesEnCola);
+
+        // Procesar colas secuencialmente
+        int atendidosExtra = 0;
+        for (Caja caja : cajas) {
+            while (caja.getClientesEnCola() > 0 && ejecutando) {
+                Cliente cliente = caja.prepararSiguienteCliente();
+                if (cliente == null) break;
+
+                // Simular atención inmediata (sin espera real)
+                cliente.setTiempoAtencionReal(1); // tiempo mínimo
+                cliente.setTiempoSalida(reloj.getTiempoActual() + 1);
+                caja.finalizarAtencion();
+                atendidosExtra++;
+                log("  Cola de " + caja.getId() + " atendido cliente " + cliente.getId());
             }
-        } while (hayPendientes && ejecutando);
+        }
+        if (atendidosExtra > 0) {
+            log("Atendidos extra en cola: " + atendidosExtra);
+        }
     }
 
     private void detenerHilos() {
@@ -282,7 +282,20 @@ public class SimulacionEngine {
 
     private void mostrarResultados() {
         EstadisticasDTO stats = estadisticasService.calcularEstadisticas(cajas);
-        eventPublisher.publish(new SimulacionFinalizadaEvent(stats));
+        String hora = calcularHoraSimulada((int) minutosSimuladosTranscurridos);
+        EstadisticasDTO completo = new EstadisticasDTO.Builder()
+            .totalClientesAtendidos(stats.getTotalClientesAtendidos())
+            .totalArticulosVendidos(stats.getTotalArticulosVendidos())
+            .totalMinutosAtencion(stats.getTotalMinutosAtencion())
+            .clientesEnCola(stats.getClientesEnCola())
+            .cajeroEstrella(stats.getCajeroEstrella())
+            .tiempoPromedioAtencion(stats.getTiempoPromedioAtencion())
+            .articulosPromedio(stats.getArticulosPromedio())
+            .clientesGenerados(clientesGenerados)
+            .horaSimulada(hora)
+            .build();
+
+        eventPublisher.publish(new SimulacionFinalizadaEvent(completo));
 
         log("\n============ ESTADISTICAS FINALES ============");
         for (Caja caja : cajas) {
@@ -291,13 +304,13 @@ public class SimulacionEngine {
                 caja.esRapida() ? "RAPIDA" : "NORMAL"));
         }
         log("----------------------------------------------");
-        log("  Total clientes atendidos: " + stats.getTotalClientesAtendidos());
-        log("  Total articulos vendidos: " + stats.getTotalArticulosVendidos());
-        log("  Total minutos de atencion: " + stats.getTotalMinutosAtencion());
-        log("  Clientes generados: " + clientesGenerados);
-        log(String.format("  Prom. articulos/cliente: %.2f", stats.getArticulosPromedio()));
-        log(String.format("  Prom. minutos/cliente: %.2f", stats.getTiempoPromedioAtencion()));
-        log("  Cajero Estrella: " + stats.getCajeroEstrella());
+        log("  Total clientes atendidos: " + completo.getTotalClientesAtendidos());
+        log("  Total articulos vendidos: " + completo.getTotalArticulosVendidos());
+        log("  Total minutos de atencion: " + completo.getTotalMinutosAtencion());
+        log("  Clientes generados: " + completo.getClientesGenerados());
+        log(String.format("  Prom. articulos/cliente: %.2f", completo.getArticulosPromedio()));
+        log(String.format("  Prom. minutos/cliente: %.2f", completo.getTiempoPromedioAtencion()));
+        log("  Cajero Estrella: " + completo.getCajeroEstrella());
         log("==============================================\n");
     }
 

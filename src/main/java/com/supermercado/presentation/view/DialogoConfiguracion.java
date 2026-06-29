@@ -21,6 +21,7 @@ public class DialogoConfiguracion extends JDialog {
     private JSpinner spinnerTiempoNormalMax;
     private JSpinner spinnerTiempoRapidaMin;
     private JSpinner spinnerTiempoRapidaMax;
+    private JSpinner spinnerLimiteRapido;
 
     private boolean confirmado = false;
     private ConfiguracionDTO configuracionOriginal;
@@ -36,7 +37,7 @@ public class DialogoConfiguracion extends JDialog {
     public DialogoConfiguracion(JFrame parent, ConfiguracionDTO config) {
         super(parent, "Configuracion de la Simulacion", true);
         this.configuracionOriginal = config;
-        setSize(580, 680);
+        setSize(580, 720);
         setLocationRelativeTo(parent);
         setResizable(false);
         setLayout(new BorderLayout());
@@ -61,14 +62,10 @@ public class DialogoConfiguracion extends JDialog {
         pp.add(crearSeccion("1. Tiempo de Simulacion"));
         pp.add(Box.createVerticalStrut(5));
         JPanel s1 = crearPanelCampos();
-        // Horas: min 1, max 24, default 12
         agregarCampo(s1, "Horas simuladas (duracion del dia):",
-            spinnerHoras = crearSpinner(
-                configuracionOriginal.getHorasSimuladas(), 1, 24), 0);
-        // Duracion real: min 5, max 120, default 20
+            spinnerHoras = crearSpinner(configuracionOriginal.getHorasSimuladas(), 1, 24), 0);
         agregarCampo(s1, "Duracion real (segundos):",
-            spinnerDuracion = crearSpinner(
-                configuracionOriginal.getDuracionRealSegundos(), 5, 120), 1);
+            spinnerDuracion = crearSpinner(configuracionOriginal.getDuracionRealSegundos(), 5, 120), 1);
         pp.add(s1);
         pp.add(Box.createVerticalStrut(12));
 
@@ -76,14 +73,10 @@ public class DialogoConfiguracion extends JDialog {
         pp.add(crearSeccion("2. Cajas Registradoras"));
         pp.add(Box.createVerticalStrut(5));
         JPanel s2 = crearPanelCampos();
-        // Cajas normales: min 0, max 20
         agregarCampo(s2, "Cajas Normales:",
-            spinnerCajasNormales = crearSpinner(
-                configuracionOriginal.getNumCajasNormales(), 0, 20), 0);
-        // Cajas rapidas: min 0, max 10
+            spinnerCajasNormales = crearSpinner(configuracionOriginal.getNumCajasNormales(), 0, 20), 0);
         agregarCampo(s2, "Cajas Rapidas:",
-            spinnerCajasRapidas = crearSpinner(
-                configuracionOriginal.getNumCajasRapidas(), 0, 10), 1);
+            spinnerCajasRapidas = crearSpinner(configuracionOriginal.getNumCajasRapidas(), 0, 10), 1);
         pp.add(s2);
         pp.add(Box.createVerticalStrut(12));
 
@@ -91,14 +84,10 @@ public class DialogoConfiguracion extends JDialog {
         pp.add(crearSeccion("3. Flujo de Clientes"));
         pp.add(Box.createVerticalStrut(5));
         JPanel s3 = crearPanelCampos();
-        // Probabilidad: min 1, max 100
         agregarCampo(s3, "Probabilidad llegada / tick (%):",
-            spinnerProbabilidad = crearSpinner(
-                configuracionOriginal.getProbabilidadLlegadaCliente(), 1, 100), 0);
-        // Limite clientes: min 0, max 10000
+            spinnerProbabilidad = crearSpinner(configuracionOriginal.getProbabilidadLlegadaCliente(), 1, 100), 0);
         agregarCampo(s3, "Max. clientes (0 = sin limite):",
-            spinnerLimiteClientes = crearSpinner(
-                configuracionOriginal.getLimiteClientes(), 0, 10000), 1);
+            spinnerLimiteClientes = crearSpinner(configuracionOriginal.getLimiteClientes(), 0, 10000), 1);
         pp.add(s3);
         pp.add(Box.createVerticalStrut(12));
 
@@ -106,13 +95,11 @@ public class DialogoConfiguracion extends JDialog {
         pp.add(crearSeccion("4. Tiempos de Atencion (minutos simulados)"));
         pp.add(Box.createVerticalStrut(5));
         JPanel s4 = crearPanelCampos();
-        // Caja normal: min 1, max 30
         agregarCampoDual(s4,
             "Normal minimo:",
             spinnerTiempoNormalMin = crearSpinner(configuracionOriginal.getTiempoCajaNormalMin(), 1, 30),
             "Normal maximo:",
             spinnerTiempoNormalMax = crearSpinner(configuracionOriginal.getTiempoCajaNormalMax(), 1, 30), 0);
-        // Caja rapida: min 1, max 15
         agregarCampoDual(s4,
             "Rapida minimo:",
             spinnerTiempoRapidaMin = crearSpinner(configuracionOriginal.getTiempoCajaRapidaMin(), 1, 15),
@@ -125,12 +112,14 @@ public class DialogoConfiguracion extends JDialog {
         pp.add(crearSeccion("5. Articulos por Cliente"));
         pp.add(Box.createVerticalStrut(5));
         JPanel s5 = crearPanelCampos();
-        // Articulos: min 1, max 10000
         agregarCampoDual(s5,
             "Minimo:",
             spinnerArticulosMin = crearSpinner(configuracionOriginal.getArticulosClienteMin(), 1, 10000),
             "Maximo:",
             spinnerArticulosMax = crearSpinner(configuracionOriginal.getArticulosClienteMax(), 1, 10000), 0);
+        // Campo para límite de cliente rápido
+        agregarCampo(s5, "Límite artículos para caja rápida:",
+            spinnerLimiteRapido = crearSpinner(configuracionOriginal.getLimiteClienteRapido(), 1, 100), 1);
         pp.add(s5);
         pp.add(Box.createVerticalStrut(10));
 
@@ -252,6 +241,7 @@ public class DialogoConfiguracion extends JDialog {
                 .tiempoCajaNormalMax((int) spinnerTiempoNormalMax.getValue())
                 .tiempoCajaRapidaMin((int) spinnerTiempoRapidaMin.getValue())
                 .tiempoCajaRapidaMax((int) spinnerTiempoRapidaMax.getValue())
+                .limiteClienteRapido((int) spinnerLimiteRapido.getValue())
                 .build();
             configuracionOriginal = config;
             confirmado = true;

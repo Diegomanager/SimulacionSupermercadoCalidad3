@@ -9,8 +9,6 @@ import com.supermercado.presentation.controller.SimulacionController;
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 
 public class SimuladorFrame extends JFrame {
 
@@ -317,16 +315,17 @@ public class SimuladorFrame extends JFrame {
         actualizarEstadisticasDirecto(estadisticas);
     }
 
-        public void agregarLog(String mensaje) {
+    public void agregarLog(String mensaje) {
         SwingUtilities.invokeLater(() -> {
             areaLog.append(mensaje + "\n");
             areaLog.setCaretPosition(areaLog.getDocument().getLength());
         });
-    });
     }
 
     public void mostrarMensaje(String msg) {
-        JOptionPane.showMessageDialog(this, msg, "Informacion", JOptionPane.INFORMATION_MESSAGE);
+        SwingUtilities.invokeLater(() -> {
+            JOptionPane.showMessageDialog(this, msg, "Información", JOptionPane.INFORMATION_MESSAGE);
+        });
     }
 
     public void mostrarError(String titulo, String msg) {
