@@ -5,7 +5,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.supermercado</groupId>
-    <artifactId>simulacion-supermercado</artifactId>
+    <artifactId>bottleneck-buster</artifactId>
+    <name>Bottleneck Buster</name>
+    <description>Sistema de simulación predictiva para la identificación y resolución de cuellos de botella.</description>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
@@ -71,7 +73,6 @@
 
     <build>
         <plugins>
-            <!-- Compilador -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -82,14 +83,12 @@
                 </configuration>
             </plugin>
 
-            <!-- Ejecutor de pruebas -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.1.2</version>
             </plugin>
 
-            <!-- Cobertura de código (JaCoCo) -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -125,7 +124,6 @@
                 </executions>
             </plugin>
 
-            <!-- Plugin para ejecutar la aplicación desde Maven -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
@@ -135,7 +133,6 @@
                 </configuration>
             </plugin>
 
-            <!-- Plugin para generar un JAR con Main-Class (sin dependencias) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
@@ -149,7 +146,6 @@
                 </configuration>
             </plugin>
 
-            <!-- Plugin para generar un JAR ejecutable con todas las dependencias (fat JAR) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>

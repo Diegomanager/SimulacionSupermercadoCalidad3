@@ -27,7 +27,8 @@ public class Main {
     private static final Logger log = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) {
-        log.info("=== INICIANDO SIMULADOR DE SUPERMERCADO ===");
+        log.info("=== INICIANDO BOTTLENECK BUSTER ===");
+        log.info("Sistema de simulación predictiva para la identificación y resolución de cuellos de botella.");
 
         try {
             UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());

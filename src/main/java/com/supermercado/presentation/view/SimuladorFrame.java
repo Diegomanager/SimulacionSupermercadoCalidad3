@@ -33,7 +33,7 @@ public class SimuladorFrame extends JFrame {
         this.configRepo = configRepo;
         this.configuracion = configRepo.cargar();
 
-        setTitle("Simulador de Supermercado - Gestion de Calidad");
+        setTitle("Bottleneck Buster - Simulador de Cuellos de Botella");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setMinimumSize(new Dimension(900, 600));
@@ -134,7 +134,7 @@ public class SimuladorFrame extends JFrame {
 
         JPanel panelTitulo = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         panelTitulo.setOpaque(false);
-        JLabel lblTitulo = new JLabel("Simulador de Supermercado");
+        JLabel lblTitulo = new JLabel("Bottleneck Buster");
         lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 17));
         lblTitulo.setForeground(Color.WHITE);
         JLabel lblVersion = new JLabel("v2.0");
